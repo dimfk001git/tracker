@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1B2A3A">
+<title>Bitcoin – Gewinn &amp; Verlust</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EEF2F5; --paper:#FFFFFF; --ink:#1B2A3A; --ink-2:#5A6B7C; --line:#D5DDE5;
+    --btc:#F2A900; --gain:#137A4B; --loss:#B8321F; --gain-bg:#DDF2E6; --loss-bg:#F9E1DC;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+    font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%}
+  main{max-width:720px;margin:0 auto;padding:20px 16px 48px}
+
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:22px}
+  header h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-.01em}
+  header h1::before{content:"₿";color:var(--btc);margin-right:8px;font-weight:600}
+  #status{font-size:13px;color:var(--ink-2)}
+  #status.live::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;
+    background:var(--gain);margin-right:6px;vertical-align:1px}
+
+  .prices{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .price{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .price small{display:block;font-size:13px;color:var(--ink-2);margin-bottom:4px}
+  .price b{display:block;font-size:26px;font-weight:600;letter-spacing:-.02em;line-height:1.1}
+
+  .amount{margin:22px 0 8px;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+    padding:14px 16px;display:flex;align-items:center;gap:12px}
+  .amount label{font-size:14px;color:var(--ink-2);flex:1}
+  .amount input{width:150px;font:inherit;font-size:22px;font-weight:600;color:var(--ink);
+    border:0;border-bottom:2px solid var(--btc);background:transparent;padding:4px 0;text-align:right;outline:none}
+  .amount input:focus{border-bottom-color:var(--ink)}
+  .worth{display:flex;justify-content:space-between;gap:12px;padding:4px 4px 0;font-size:15px}
+  .worth span{color:var(--ink-2)}
+
+  .toggle{display:flex;gap:6px;margin:22px 0 4px}
+  .toggle button{font:inherit;font-size:14px;font-weight:500;padding:7px 14px;border-radius:999px;
+    border:1px solid var(--line);background:var(--paper);color:var(--ink-2);cursor:pointer}
+  .toggle button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .toggle button:focus-visible{outline:2px solid var(--btc);outline-offset:2px}
+
+  /* Zeilen mit Kacheln */
+  .row{margin-top:18px}
+  .row h2{font-size:15px;font-weight:600;margin:0 0 8px 2px}
+  .tiles{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scroll-snap-type:x proximity;
+    -webkit-overflow-scrolling:touch;scrollbar-width:thin}
+  .tile{flex:0 0 138px;scroll-snap-align:start;background:var(--paper);border:1px solid var(--line);
+    border-radius:10px;padding:10px 12px;min-height:88px;display:flex;flex-direction:column;justify-content:space-between}
+  .tile.sep{margin-right:10px;position:relative}
+  .tile.sep::after{content:"";position:absolute;right:-10px;top:14px;bottom:14px;border-right:2px dotted var(--line)}
+  .tile .lbl{font-size:13px;font-weight:500;line-height:1.2}
+  .tile .lbl small{display:block;font-weight:400;font-size:11px;color:var(--ink-2);margin-top:2px}
+  .tile b{display:block;font-size:16px;font-weight:600;margin-top:8px;letter-spacing:-.01em}
+  .tile .pct{font-size:12px;font-weight:500;margin-top:2px}
+  .tile.up{background:var(--gain-bg);border-color:#BFE3CE} .tile.up b,.tile.up .pct{color:var(--gain)}
+  .tile.down{background:var(--loss-bg);border-color:#EFC3BB} .tile.down b,.tile.down .pct{color:var(--loss)}
+  .tile.na b,.tile.na .pct{color:var(--ink-2);font-weight:400;font-size:12px}
+
+  footer{margin-top:20px;font-size:12px;color:var(--ink-2);line-height:1.5}
+  #error{display:none;margin:12px 0;padding:12px 14px;border-radius:10px;background:var(--loss-bg);color:var(--loss);font-size:14px;line-height:1.45}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Bitcoin – Gewinn &amp; Verlust</h1>
+    <div id="status">lädt…</div>
+  </header>
+
+  <section class="prices" aria-label="Aktuelle Kurse">
+    <div class="price"><small>1 BTC in USD</small><b id="pUSD">–</b></div>
+    <div class="price"><small>1 BTC in EUR</small><b id="pEUR">–</b></div>
+  </section>
+
+  <div class="amount">
+    <label for="btc">Menge in Bitcoin</label>
+    <input id="btc" type="number" inputmode="decimal" step="any" min="0" placeholder="0,00">
+  </div>
+  <div class="worth"><span>Aktueller Wert</span><strong id="worth">–</strong></div>
+
+  <div id="error" role="alert"></div>
+
+  <div class="toggle" role="group" aria-label="Währung für die Auswertung">
+    <button id="tUSD" aria-pressed="true">USD</button>
+    <button id="tEUR" aria-pressed="false">EUR</button>
+  </div>
+
+  <div id="rows"></div>
+
+  <footer>
+    Kurse von Kraken (BTC/USD, BTC/EUR). Kurs alle 30 Sekunden, Verlauf alle 10 Minuten aktualisiert.
+    Zeiträume beziehen sich auf deine lokale Zeit. Bei mehr als 2 Jahren zurück liegen nur Wochenkurse vor,
+    Jahresgrenzen sind dann bis zu einigen Tagen ungenau. Die eingegebene Menge bleibt auf deinem Gerät.
+  </footer>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const CURS = ['USD','EUR'];
+  const PAIRS = { USD:'XBTUSD', EUR:'XBTEUR' };
+  const KEYS  = { USD:'XXBTZUSD', EUR:'XXBTZEUR' };
+  const state = { now:{}, hourly:{}, daily:{}, weekly:{}, cur:'USD', amount:0 };
+
+  const fmtMoney = (v, cur, signed=false) =>
+    (signed && v > 0 ? '+' : '') +
+    v.toLocaleString('de-DE', { style:'currency', currency:cur, maximumFractionDigits: Math.abs(v) < 100 ? 2 : 0 });
+  const fmtPct = p => (p > 0 ? '+' : '') + (p*100).toLocaleString('de-DE',{maximumFractionDigits:1}) + ' %';
+  const dm = d => d.toLocaleDateString('de-DE',{ day:'2-digit', month:'2-digit' });
+  const wd = d => d.toLocaleDateString('de-DE',{ weekday:'short' });
+  const my = d => d.toLocaleDateString('de-DE',{ month:'short', year:'numeric' });
+  const isoWeek = d => { const x = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    x.setUTCDate(x.getUTCDate() + 4 - (x.getUTCDay() || 7));
+    return Math.ceil(((x - Date.UTC(x.getUTCFullYear(),0,1)) / 864e5 + 1) / 7); };
+
+  // Zeilen und Kacheln (alle Zeiten lokal)
+  function rows() {
+    const n = new Date(), y = n.getFullYear(), m = n.getMonth(), d = n.getDate();
+    const day = (o) => new Date(y, m, d - o);
+    const midnight = day(0);
+    const monday = new Date(y, m, d - ((midnight.getDay() + 6) % 7));
+    const week = (o) => new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() - 7*o);
+    const month = (o) => new Date(y, m - o, 1);
+    const year = (o) => new Date(y - o, 0, 1);
+    const prev = (fn, label) => Array.from({length:10}, (_, i) => ({ from:fn(i+1), to:fn(i), ...label(fn(i+1), fn(i), i+1) }));
+    return [
+      { title:'Tag', tiles:[
+        { label:'24 Stunden', sub:'rollierend', from:new Date(n - 864e5) },
+        { label:'Heute', sub:'seit 0 Uhr', from:midnight },
+        ...prev(day, (a,_,i) => ({ label: i===1 ? 'Gestern' : wd(a), sub: dm(a) })) ]},
+      { title:'Woche', tiles:[
+        { label:'7 Tage', sub:'rollierend', from:new Date(n - 7*864e5) },
+        { label:'Diese Woche', sub:'seit Mo 0 Uhr', from:monday },
+        ...prev(week, (a,b,i) => ({ label: i===1 ? 'Letzte Woche' : 'KW ' + isoWeek(a), sub: dm(a)+'–'+dm(new Date(b-1)) })) ]},
+      { title:'Monat', tiles:[
+        { label:'1 Monat', sub:'rollierend', from:new Date(y, m-1, d, n.getHours(), n.getMinutes()) },
+        { label:'Dieser Monat', sub:'seit 1. 0 Uhr', from:month(0) },
+        ...prev(month, (a,_,i) => ({ label: i===1 ? 'Letzter Monat' : my(a), sub: i===1 ? my(a) : '' })) ]},
+      { title:'Jahr', tiles:[
+        { label:'1 Jahr', sub:'rollierend', from:new Date(y-1, m, d, n.getHours(), n.getMinutes()) },
+        { label:'Dieses Jahr', sub:'seit 1. Jan. 0 Uhr', from:year(0) },
+        ...prev(year, (a,_,i) => ({ label: i===1 ? 'Letztes Jahr' : String(a.getFullYear()), sub: i===1 ? String(a.getFullYear()) : '' })) ]},
+    ];
+  }
+
+  // Kurs zum Zeitpunkt t: feinste Kerzenreihe, die t abdeckt
+  function priceAt(cur, t) {
+    const ts = t.getTime() / 1000;
+    for (const s of [state.hourly[cur], state.daily[cur], state.weekly[cur]]) {
+      if (!s || !s.length || ts < s[0][0]) continue;
+      let i = 0; while (i + 1 < s.length && s[i+1][0] <= ts) i++;
+      if (i + 1 < s.length && s[i+1][0] - ts < ts - s[i][0]) i++; // nächstgelegene Kerze
+      return +s[i][1];
+    }
+    return null;
+  }
+
+  function render() {
+    for (const c of CURS) if (state.now[c]) $('p'+c).textContent = fmtMoney(state.now[c], c);
+    const cur = state.cur, now = state.now[cur], a = state.amount;
+    $('worth').textContent = !now ? '–' : a ? fmtMoney(a*now, cur) : 'Menge eingeben';
+
+    const host = $('rows'); host.innerHTML = '';
+    for (const r of rows()) {
+      const sec = document.createElement('section'); sec.className = 'row';
+      sec.innerHTML = `<h2>${r.title}</h2><div class="tiles"></div>`;
+      const wrap = sec.querySelector('.tiles');
+      r.tiles.forEach((t, idx) => {
+        const from = now ? priceAt(cur, t.from) : null;
+        const to = t.to ? priceAt(cur, t.to) : now;
+        const el = document.createElement('div');
+        el.className = 'tile' + (idx === 1 ? ' sep' : '');
+        let body;
+        if (from && to) {
+          const diff = a*(to - from), pct = to/from - 1;
+          el.classList.add(pct >= 0 ? 'up' : 'down');
+          body = `<div><b>${fmtMoney(diff, cur, true)}</b><div class="pct">${fmtPct(pct)}</div></div>`;
+        } else {
+          el.classList.add('na');
+          body = `<div><b>keine Daten</b></div>`;
+        }
+        el.innerHTML = `<div class="lbl">${t.label}<small>${t.sub || ''}</small></div>${body}`;
+        wrap.appendChild(el);
+      });
+      host.appendChild(sec);
+    }
+  }
+
+  async function kraken(path) {
+    const r = await fetch('https://api.kraken.com/0/public/' + path, { cache:'no-store' });
+    const j = await r.json();
+    if (j.error && j.error.length) throw new Error(j.error.join(', '));
+    return j.result;
+  }
+
+  async function loadTicker() {
+    const res = await kraken('Ticker?pair=' + Object.values(PAIRS).join(','));
+    for (const c of CURS) state.now[c] = +res[KEYS[c]].c[0];
+    $('status').textContent = 'live · ' + new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+    $('status').className = 'live';
+  }
+
+  async function loadHistory() {
+    for (const c of CURS) {
+      const [h, d, w] = await Promise.all([
+        kraken(`OHLC?pair=${PAIRS[c]}&interval=60`),     // 720 Stunden ≈ 30 Tage
+        kraken(`OHLC?pair=${PAIRS[c]}&interval=1440`),   // 720 Tage ≈ 2 Jahre
+        kraken(`OHLC?pair=${PAIRS[c]}&interval=10080`),  // 720 Wochen ≈ 13 Jahre
+      ]);
+      state.hourly[c] = h[KEYS[c]]; state.daily[c] = d[KEYS[c]]; state.weekly[c] = w[KEYS[c]];
+    }
+  }
+
+  function showError(msg) { const e = $('error'); e.style.display = msg ? 'block' : 'none'; e.textContent = msg || ''; }
+
+  async function refresh(history) {
+    try {
+      await loadTicker();
+      if (history) await loadHistory();
+      showError('');
+    } catch (err) {
+      $('status').textContent = 'keine Verbindung'; $('status').className = '';
+      showError('Kurse konnten nicht geladen werden (' + err.message + '). Nächster Versuch in 30 Sekunden.');
+    }
+    render();
+  }
+
+  // Menge: aus URL (?btc=0.5) oder lokal gespeichert – wird nie an einen Server geschickt
+  const params = new URLSearchParams(location.search);
+  let saved = params.get('btc');
+  try { saved = saved ?? localStorage.getItem('btcAmount'); } catch {}
+  if (saved) { $('btc').value = saved; state.amount = parseFloat(String(saved).replace(',', '.')) || 0; }
+
+  $('btc').addEventListener('input', e => {
+    state.amount = parseFloat(String(e.target.value).replace(',', '.')) || 0;
+    try { localStorage.setItem('btcAmount', e.target.value); } catch {}
+    render();
+  });
+  for (const c of CURS) $('t'+c).addEventListener('click', () => {
+    state.cur = c;
+    for (const k of CURS) $('t'+k).setAttribute('aria-pressed', k === c);
+    render();
+  });
+
+  refresh(true);
+  setInterval(() => refresh(false), 30000);
+  setInterval(() => refresh(true), 600000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(true); });
+})();
+</script>
+</body>
+</html>
