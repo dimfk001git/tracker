@@ -11,19 +11,28 @@
   :root{
     --bg:#EEF2F5; --paper:#FFFFFF; --ink:#1B2A3A; --ink-2:#5A6B7C; --line:#D5DDE5;
     --btc:#F2A900; --gain:#137A4B; --loss:#B8321F; --gain-bg:#DDF2E6; --loss-bg:#F9E1DC;
+    --bw:26px;
   }
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--bg);color:var(--ink);
     font-family:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
     font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%}
-  main{max-width:720px;margin:0 auto;padding:20px 16px 48px}
+  main{max-width:760px;margin:0 auto;padding:20px 16px 48px;
+    padding-top:calc(20px + env(safe-area-inset-top,0px));padding-bottom:calc(48px + env(safe-area-inset-bottom,0px))}
 
-  header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:22px}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px}
   header h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-.01em}
   header h1::before{content:"₿";color:var(--btc);margin-right:8px;font-weight:600}
-  #status{font-size:13px;color:var(--ink-2)}
+  #status{font-size:13px;color:var(--ink-2);white-space:nowrap}
   #status.live::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;
     background:var(--gain);margin-right:6px;vertical-align:1px}
+
+  /* Ansichts-Umschalter */
+  .views{display:inline-flex;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:3px;margin-bottom:18px}
+  .views button{font:inherit;font-size:14px;font-weight:500;padding:6px 14px;border-radius:999px;border:0;
+    background:none;color:var(--ink-2);cursor:pointer}
+  .views button:hover{color:var(--ink)}
+  .views [aria-current="true"],.views [aria-current="true"]:hover{background:var(--ink);color:#fff}
 
   .prices{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .price{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
@@ -39,15 +48,19 @@
   .worth{display:flex;justify-content:space-between;gap:12px;padding:4px 4px 0;font-size:15px}
   .worth span{color:var(--ink-2)}
 
-  .toggle{display:flex;gap:6px;margin:22px 0 4px}
+  .toggle{display:flex;gap:6px;margin:22px 0 4px;align-items:center;flex-wrap:wrap}
   .toggle button{font:inherit;font-size:14px;font-weight:500;padding:7px 14px;border-radius:999px;
     border:1px solid var(--line);background:var(--paper);color:var(--ink-2);cursor:pointer}
   .toggle button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
-  .toggle button:focus-visible{outline:2px solid var(--btc);outline-offset:2px}
+  button:focus-visible,a:focus-visible{outline:2px solid var(--btc);outline-offset:2px}
+  #legend{font-size:12px;color:var(--ink-2);margin:6px 2px 0;line-height:1.45}
+  #legend:empty{display:none}
 
-  /* Zeilen mit Kacheln */
+  /* Zeilen */
   .row{margin-top:18px}
   .row h2{font-size:15px;font-weight:600;margin:0 0 8px 2px}
+
+  /* Ansicht Kacheln */
   .tiles{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scroll-snap-type:x proximity;
     -webkit-overflow-scrolling:touch;scrollbar-width:thin}
   .tile{flex:0 0 138px;scroll-snap-align:start;background:var(--paper);border:1px solid var(--line);
@@ -62,6 +75,44 @@
   .tile.down{background:var(--loss-bg);border-color:#EFC3BB} .tile.down b,.tile.down .pct{color:var(--loss)}
   .tile.na b,.tile.na .pct{color:var(--ink-2);font-weight:400;font-size:12px}
 
+  /* Ansichten Balken und Wasserfall */
+  .row.card{margin-top:16px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 12px 10px}
+  .row-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 2px 4px}
+  .row-head h2{margin:0}
+  .chip{font-size:12px;color:var(--ink-2)}
+  .chip b{font-weight:600}
+  .chip .up{color:var(--gain)} .chip .down{color:var(--loss)}
+
+  .chart{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;padding-bottom:4px}
+  .cols{display:flex;min-width:min-content}
+  .col{flex:1 0 60px;display:flex;flex-direction:column;background:none;border:0;padding:0;margin:0;
+    font:inherit;color:inherit;cursor:pointer;border-radius:8px;text-align:center;-webkit-tap-highlight-color:transparent}
+  .col.sel{background:#F2F5F8}
+  .col.roll{margin-left:8px;border-left:2px dotted var(--line);border-radius:0 8px 8px 0}
+  .col.total{margin-left:8px}
+
+  .plot{position:relative;height:196px}
+  .area{position:absolute;left:0;right:0;top:36px;bottom:36px}
+  .area::before{content:"";position:absolute;left:0;right:0;bottom:var(--z);border-top:1px solid #AEBBC8}
+  .wf .area::before{border-top:1px dashed #AEBBC8}
+  .col.roll .area::before,.col.total .area::before{left:4px}
+
+  .bar{position:absolute;left:50%;width:var(--bw);transform:translateX(-50%);border-radius:3px;background:var(--c)}
+  .up{--c:var(--gain)} .down{--c:var(--loss)}
+  .bar.live{background:repeating-linear-gradient(135deg,var(--c) 0 4px,color-mix(in srgb,var(--c) 45%,#fff) 4px 7px)}
+  .col.total .bar{width:calc(var(--bw) + 8px)}
+  .link{position:absolute;left:calc(50% + var(--bw)/2);width:calc(100% - var(--bw));border-top:1px dotted var(--ink-2);opacity:.6}
+  .val{position:absolute;left:50%;transform:translateX(-50%);font-size:11px;font-weight:600;line-height:1.25;white-space:nowrap;color:var(--c)}
+  .val i{display:block;font-style:normal;font-weight:500;opacity:.85}
+  .na-dot{position:absolute;left:50%;width:6px;height:6px;margin:0 0 -3px -3px;border-radius:50%;background:var(--line)}
+
+  .col .lbl{font-size:11px;font-weight:500;line-height:1.2;padding:0 2px 6px;min-height:34px}
+  .col .lbl small{display:block;font-weight:400;font-size:10px;color:var(--ink-2);margin-top:2px}
+
+  .detail{font-size:13px;line-height:1.45;margin:6px 2px 0;min-height:19px;color:var(--ink-2)}
+  .detail b{color:var(--ink);font-weight:600}
+  .detail .up{color:var(--gain)} .detail .down{color:var(--loss)}
+
   footer{margin-top:20px;font-size:12px;color:var(--ink-2);line-height:1.5}
   #error{display:none;margin:12px 0;padding:12px 14px;border-radius:10px;background:var(--loss-bg);color:var(--loss);font-size:14px;line-height:1.45}
 </style>
@@ -72,6 +123,12 @@
     <h1>Bitcoin – Gewinn &amp; Verlust</h1>
     <div id="status">lädt…</div>
   </header>
+
+  <nav class="views" aria-label="Ansicht">
+    <button data-v="kacheln">Kacheln</button>
+    <button data-v="balken">Balken</button>
+    <button data-v="wasserfall">Wasserfall</button>
+  </nav>
 
   <section class="prices" aria-label="Aktuelle Kurse">
     <div class="price"><small>1 BTC in USD</small><b id="pUSD">–</b></div>
@@ -90,6 +147,7 @@
     <button id="tUSD" aria-pressed="true">USD</button>
     <button id="tEUR" aria-pressed="false">EUR</button>
   </div>
+  <p id="legend"></p>
 
   <div id="rows"></div>
 
@@ -106,20 +164,30 @@
   const CURS = ['USD','EUR'];
   const PAIRS = { USD:'XBTUSD', EUR:'XBTEUR' };
   const KEYS  = { USD:'XXBTZUSD', EUR:'XXBTZEUR' };
-  const state = { now:{}, hourly:{}, daily:{}, weekly:{}, cur:'USD', amount:0 };
+  const state = { now:{}, hourly:{}, daily:{}, weekly:{}, cur:'USD', amount:0, view:'balken', sel:{}, scroll:{} };
 
   const fmtMoney = (v, cur, signed=false) =>
     (signed && v > 0 ? '+' : '') +
     v.toLocaleString('de-DE', { style:'currency', currency:cur, maximumFractionDigits: Math.abs(v) < 100 ? 2 : 0 });
+  // Kurzform für die Beschriftung an den Balken
+  const fmtShort = (v, cur) => {
+    const s = v > 0 ? '+' : v < 0 ? '−' : '', x = Math.abs(v), sym = cur === 'EUR' ? '€' : '$';
+    const n = x >= 1e6 ? (x/1e6).toLocaleString('de-DE',{maximumFractionDigits:1}) + ' Mio.'
+            : x >= 1e4 ? Math.round(x/1e3).toLocaleString('de-DE') + ' Tsd.'
+            : x.toLocaleString('de-DE',{maximumFractionDigits: x < 100 ? 2 : 0});
+    return s + n + ' ' + sym;
+  };
   const fmtPct = p => (p > 0 ? '+' : '') + (p*100).toLocaleString('de-DE',{maximumFractionDigits:1}) + ' %';
   const dm = d => d.toLocaleDateString('de-DE',{ day:'2-digit', month:'2-digit' });
+  const dmy = d => d.toLocaleDateString('de-DE',{ day:'2-digit', month:'2-digit', year:'numeric' });
   const wd = d => d.toLocaleDateString('de-DE',{ weekday:'short' });
   const my = d => d.toLocaleDateString('de-DE',{ month:'short', year:'numeric' });
   const isoWeek = d => { const x = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     x.setUTCDate(x.getUTCDate() + 4 - (x.getUTCDay() || 7));
     return Math.ceil(((x - Date.UTC(x.getUTCFullYear(),0,1)) / 864e5 + 1) / 7); };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-  // Zeilen und Kacheln (alle Zeiten lokal)
+  // Zeilen und Zeiträume – identisch zur Kachel-Seite (alle Zeiten lokal)
   function rows() {
     const n = new Date(), y = n.getFullYear(), m = n.getMonth(), d = n.getDate();
     const day = (o) => new Date(y, m, d - o);
@@ -130,19 +198,19 @@
     const year = (o) => new Date(y - o, 0, 1);
     const prev = (fn, label) => Array.from({length:10}, (_, i) => ({ from:fn(i+1), to:fn(i), ...label(fn(i+1), fn(i), i+1) }));
     return [
-      { title:'Tag', tiles:[
+      { title:'Tag', since:dmy, tiles:[
         { label:'24 Stunden', sub:'rollierend', from:new Date(n - 864e5) },
         { label:'Heute', sub:'seit 0 Uhr', from:midnight },
         ...prev(day, (a,_,i) => ({ label: i===1 ? 'Gestern' : wd(a), sub: dm(a) })) ]},
-      { title:'Woche', tiles:[
+      { title:'Woche', since:dmy, tiles:[
         { label:'7 Tage', sub:'rollierend', from:new Date(n - 7*864e5) },
         { label:'Diese Woche', sub:'seit Mo 0 Uhr', from:monday },
         ...prev(week, (a,b,i) => ({ label: i===1 ? 'Letzte Woche' : 'KW ' + isoWeek(a), sub: dm(a)+'–'+dm(new Date(b-1)) })) ]},
-      { title:'Monat', tiles:[
+      { title:'Monat', since:my, tiles:[
         { label:'1 Monat', sub:'rollierend', from:new Date(y, m-1, d, n.getHours(), n.getMinutes()) },
         { label:'Dieser Monat', sub:'seit 1. 0 Uhr', from:month(0) },
         ...prev(month, (a,_,i) => ({ label: i===1 ? 'Letzter Monat' : my(a), sub: i===1 ? my(a) : '' })) ]},
-      { title:'Jahr', tiles:[
+      { title:'Jahr', since:d => String(d.getFullYear()), tiles:[
         { label:'1 Jahr', sub:'rollierend', from:new Date(y-1, m, d, n.getHours(), n.getMinutes()) },
         { label:'Dieses Jahr', sub:'seit 1. Jan. 0 Uhr', from:year(0) },
         ...prev(year, (a,_,i) => ({ label: i===1 ? 'Letztes Jahr' : String(a.getFullYear()), sub: i===1 ? String(a.getFullYear()) : '' })) ]},
@@ -155,43 +223,185 @@
     for (const s of [state.hourly[cur], state.daily[cur], state.weekly[cur]]) {
       if (!s || !s.length || ts < s[0][0]) continue;
       let i = 0; while (i + 1 < s.length && s[i+1][0] <= ts) i++;
-      if (i + 1 < s.length && s[i+1][0] - ts < ts - s[i][0]) i++; // nächstgelegene Kerze
+      if (i + 1 < s.length && s[i+1][0] - ts < ts - s[i][0]) i++;
       return +s[i][1];
     }
     return null;
   }
 
+  function change(t) {
+    const cur = state.cur, now = state.now[cur];
+    const from = now ? priceAt(cur, t.from) : null;
+    const to = t.to ? priceAt(cur, t.to) : now;
+    return from && to ? { from, to, pct: to/from - 1, diff: state.amount*(to - from) } : null;
+  }
+  const dir = v => v >= 0 ? 'up' : 'down';
+  const periodName = t => esc(t.label) + (t.sub ? ' <span>(' + esc(t.sub) + ')</span>' : '');
+
+  // Beschriftung am Balken: Betrag (wenn Menge eingegeben) + Prozent
+  const valText = c => state.amount
+    ? `${fmtShort(c.diff, state.cur)}<i>${fmtPct(c.pct)}</i>` : fmtPct(c.pct);
+
+  /* ---------- Balken ---------- */
+  function buildBars(r) {
+    const cols = [
+      ...r.tiles.slice(2).reverse().map(t => ({ t, kind:'past' })),
+      { t:r.tiles[1], kind:'live' },
+      { t:r.tiles[0], kind:'roll' },
+    ];
+    cols.forEach(c => c.d = change(c.t));
+    const ps = cols.filter(c => c.d).map(c => c.d.pct);
+    const up = Math.max(0, ...ps), dn = Math.max(0, ...ps.map(p => -p)), span = up + dn || 1;
+    const z = up + dn ? dn/span*100 : 50;
+
+    const html = cols.map((c, i) => {
+      let inner;
+      if (c.d) {
+        const p = c.d.pct, h = Math.abs(p)/span*100;
+        const bar = p >= 0 ? `bottom:${z}%;height:max(2px,${h}%)` : `top:${100-z}%;height:max(2px,${h}%)`;
+        const val = p >= 0 ? `bottom:calc(${z+h}% + 4px)` : `top:calc(${100-z+h}% + 4px)`;
+        inner = `<div class="bar ${c.kind==='live'?'live':''}" style="${bar}"></div><div class="val" style="${val}">${valText(c.d)}</div>`;
+      } else inner = `<div class="na-dot" style="bottom:${z}%"></div>`;
+      return `<button class="col ${c.kind} ${c.d ? dir(c.d.pct) : 'na'}" data-i="${i}">
+        <div class="plot"><div class="area">${inner}</div></div>
+        <div class="lbl">${esc(c.t.label)}<small>${esc(c.t.sub || '')}</small></div></button>`;
+    }).join('');
+
+    const detail = i => {
+      const c = cols[i], cur = state.cur;
+      if (!c.d) return `<b>${periodName(c.t)}</b>: keine Daten`;
+      const d = c.d, k = dir(d.pct);
+      return `<b>${periodName(c.t)}</b>: <span class="${k}">${state.amount ? fmtMoney(d.diff, cur, true) + ' · ' : ''}${fmtPct(d.pct)}</span>
+        · Kurs ${fmtMoney(d.from, cur)} → ${fmtMoney(d.to, cur)}`;
+    };
+    return { html, z, detail, defaultSel: cols.length - 2, chip:'' };
+  }
+
+  /* ---------- Wasserfall ---------- */
+  function buildWaterfall(r) {
+    const cur = state.cur, now = state.now[cur], k = state.amount || 1;
+    const steps = [...r.tiles.slice(2).reverse(), r.tiles[1]];               // chronologisch, zuletzt laufender Zeitraum
+    const times = [steps[0].from, ...steps.map(s => s.to || null)];          // null = jetzt
+    const vals = times.map(t => !now ? null : (t ? priceAt(cur, t) : now)).map(p => p ? p*k : null);
+    const known = vals.filter(v => v != null);
+    let lo = Math.min(...known), hi = Math.max(...known);
+    if (!known.length) { lo = 0; hi = 1; } else if (hi === lo) { hi = lo + 1; }
+    const pos = v => (v - lo) / (hi - lo) * 100;
+    const first = vals.find(v => v != null), last = vals[vals.length - 1];
+
+    const cols = steps.map((t, j) => {
+      const vs = vals[j], ve = vals[j+1];
+      return { t, kind: j === steps.length-1 ? 'live' : 'past', vs, ve,
+        d: vs && ve ? { from: vs/k, to: ve/k, pct: ve/vs - 1, diff: state.amount*(ve - vs)/k } : null };
+    });
+    const firstIdx = vals.findIndex(v => v != null);
+    const sinceLabel = r.since(times[Math.max(firstIdx, 0)]);
+    cols.push({ t:{ label:'Gesamt', sub:'seit ' + sinceLabel }, kind:'total', vs:first, ve:last,
+      d: first && last ? { from:first/k, to:last/k, pct:last/first - 1, diff: state.amount*(last-first)/k } : null });
+
+    const html = cols.map((c, i) => {
+      let inner = '';
+      if (c.d) {
+        const b = pos(Math.min(c.vs, c.ve)), h = Math.abs(pos(c.ve) - pos(c.vs)), up = c.ve >= c.vs;
+        const val = up ? `bottom:calc(${b+h}% + 4px)` : `top:calc(${100-b}% + 4px)`;
+        inner = `<div class="bar ${c.kind==='live'?'live':''}" style="bottom:${b}%;height:max(2px,${h}%)"></div>
+          <div class="val" style="${val}">${valText(c.d)}</div>`;
+        if (i < cols.length - 2 || (c.kind === 'live' && last)) inner += `<div class="link" style="bottom:${pos(c.ve)}%"></div>`;
+      } else if (c.ve != null || c.vs != null) {
+        inner = `<div class="na-dot" style="bottom:${pos(c.ve ?? c.vs)}%"></div>`;
+      }
+      return `<button class="col ${c.kind} ${c.d ? dir(c.d.pct) : 'na'}" data-i="${i}">
+        <div class="plot"><div class="area">${inner}</div></div>
+        <div class="lbl">${esc(c.t.label)}<small>${esc(c.t.sub || '')}</small></div></button>`;
+    }).join('');
+
+    const base = state.amount ? 'Wert' : 'Kurs 1 BTC';
+    const detail = i => {
+      const c = cols[i];
+      if (!c.d) return `<b>${periodName(c.t)}</b>: keine Daten`;
+      const d = c.d, kk = dir(d.pct), money = state.amount ? fmtMoney(d.diff, cur, true) + ' · ' : '';
+      if (c.kind === 'total')
+        return `<b>Gesamt seit ${esc(sinceLabel)}</b>: <span class="${kk}">${money}${fmtPct(d.pct)}</span>
+          · ${base} ${fmtMoney(c.vs, cur)} → jetzt ${fmtMoney(c.ve, cur)}`;
+      return `<b>${periodName(c.t)}</b>: <span class="${kk}">${money}${fmtPct(d.pct)}</span>
+        · ${base} danach ${fmtMoney(c.ve, cur)}`;
+    };
+
+    // rollierender Zeitraum passt nicht in die Kette – als Hinweis in der Kopfzeile
+    const rc = change(r.tiles[0]);
+    const chip = rc ? `${esc(r.tiles[0].label)} rollierend: <b class="${dir(rc.pct)}">${state.amount ? fmtMoney(rc.diff, cur, true) + ' · ' : ''}${fmtPct(rc.pct)}</b>` : '';
+    return { html, z: first ? pos(first) : 50, detail, defaultSel: cols.length - 1, chip, wf:true };
+  }
+
+  /* ---------- Kacheln ---------- */
+  function buildTiles(r) {
+    const sec = document.createElement('section'); sec.className = 'row';
+    sec.innerHTML = `<h2>${r.title}</h2><div class="tiles"></div>`;
+    const wrap = sec.querySelector('.tiles');
+    r.tiles.forEach((t, idx) => {
+      const c = change(t);
+      const el = document.createElement('div');
+      el.className = 'tile' + (idx === 1 ? ' sep' : '');
+      let body;
+      if (c) {
+        el.classList.add(dir(c.pct));
+        body = `<div><b>${fmtMoney(c.diff, state.cur, true)}</b><div class="pct">${fmtPct(c.pct)}</div></div>`;
+      } else {
+        el.classList.add('na');
+        body = `<div><b>keine Daten</b></div>`;
+      }
+      el.innerHTML = `<div class="lbl">${esc(t.label)}<small>${esc(t.sub || '')}</small></div>${body}`;
+      wrap.appendChild(el);
+    });
+    return sec;
+  }
+
+  /* ---------- Darstellung ---------- */
+  const LEGEND = {
+    kacheln: '',
+    balken: 'Balkenhöhe = prozentuale Veränderung im Zeitraum, links alt, rechts aktuell. Gestreift = Zeitraum läuft noch. Tippe auf einen Balken für Details.',
+    wasserfall: 'Jede Stufe zeigt die Veränderung eines Zeitraums und setzt dort an, wo der vorige aufgehört hat – bis zum aktuellen Stand. Gestrichelt = Ausgangswert, rechts die Gesamtveränderung.',
+  };
+
   function render() {
     for (const c of CURS) if (state.now[c]) $('p'+c).textContent = fmtMoney(state.now[c], c);
     const cur = state.cur, now = state.now[cur], a = state.amount;
     $('worth').textContent = !now ? '–' : a ? fmtMoney(a*now, cur) : 'Menge eingeben';
+    $('legend').textContent = LEGEND[state.view];
 
-    const host = $('rows'); host.innerHTML = '';
-    for (const r of rows()) {
-      const sec = document.createElement('section'); sec.className = 'row';
-      sec.innerHTML = `<h2>${r.title}</h2><div class="tiles"></div>`;
-      const wrap = sec.querySelector('.tiles');
-      r.tiles.forEach((t, idx) => {
-        const from = now ? priceAt(cur, t.from) : null;
-        const to = t.to ? priceAt(cur, t.to) : now;
-        const el = document.createElement('div');
-        el.className = 'tile' + (idx === 1 ? ' sep' : '');
-        let body;
-        if (from && to) {
-          const diff = a*(to - from), pct = to/from - 1;
-          el.classList.add(pct >= 0 ? 'up' : 'down');
-          body = `<div><b>${fmtMoney(diff, cur, true)}</b><div class="pct">${fmtPct(pct)}</div></div>`;
-        } else {
-          el.classList.add('na');
-          body = `<div><b>keine Daten</b></div>`;
-        }
-        el.innerHTML = `<div class="lbl">${t.label}<small>${t.sub || ''}</small></div>${body}`;
-        wrap.appendChild(el);
-      });
+    const host = $('rows');
+    host.querySelectorAll('.chart').forEach(ch => state.scroll[ch.dataset.key] = ch.scrollLeft);
+    host.innerHTML = '';
+
+    rows().forEach((r, ri) => {
+      if (state.view === 'kacheln') { host.appendChild(buildTiles(r)); return; }
+      const m = state.view === 'wasserfall' ? buildWaterfall(r) : buildBars(r);
+      const key = state.view + ri;
+      const sec = document.createElement('section'); sec.className = 'row card';
+      sec.innerHTML = `<div class="row-head"><h2>${r.title}</h2><span class="chip">${m.chip}</span></div>
+        <div class="chart ${m.wf ? 'wf' : ''}" data-key="${key}"><div class="cols" style="--z:${m.z}%">${m.html}</div></div>
+        <div class="detail" aria-live="polite"></div>`;
       host.appendChild(sec);
-    }
+
+      const detailEl = sec.querySelector('.detail'), cols = sec.querySelectorAll('.col');
+      const select = i => {
+        state.sel[key] = i;
+        cols.forEach((c, j) => { c.classList.toggle('sel', j === i); c.setAttribute('aria-pressed', j === i); });
+        detailEl.innerHTML = m.detail(i);
+      };
+      cols.forEach((c, i) => {
+        c.addEventListener('click', () => select(i));
+        c.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') select(i); });
+      });
+      select(Math.min(state.sel[key] ?? m.defaultSel, cols.length - 1));
+
+      const ch = sec.querySelector('.chart');
+      ch.scrollLeft = state.scroll[key] ?? ch.scrollWidth;   // zuerst das Aktuelle zeigen
+      ch.addEventListener('scroll', () => state.scroll[key] = ch.scrollLeft, { passive:true });
+    });
   }
 
+  /* ---------- Daten ---------- */
   async function kraken(path) {
     const r = await fetch('https://api.kraken.com/0/public/' + path, { cache:'no-store' });
     const j = await r.json();
@@ -209,9 +419,9 @@
   async function loadHistory() {
     for (const c of CURS) {
       const [h, d, w] = await Promise.all([
-        kraken(`OHLC?pair=${PAIRS[c]}&interval=60`),     // 720 Stunden ≈ 30 Tage
-        kraken(`OHLC?pair=${PAIRS[c]}&interval=1440`),   // 720 Tage ≈ 2 Jahre
-        kraken(`OHLC?pair=${PAIRS[c]}&interval=10080`),  // 720 Wochen ≈ 13 Jahre
+        kraken(`OHLC?pair=${PAIRS[c]}&interval=60`),
+        kraken(`OHLC?pair=${PAIRS[c]}&interval=1440`),
+        kraken(`OHLC?pair=${PAIRS[c]}&interval=10080`),
       ]);
       state.hourly[c] = h[KEYS[c]]; state.daily[c] = d[KEYS[c]]; state.weekly[c] = w[KEYS[c]];
     }
@@ -231,7 +441,7 @@
     render();
   }
 
-  // Menge: aus URL (?btc=0.5) oder lokal gespeichert – wird nie an einen Server geschickt
+  /* ---------- Bedienung ---------- */
   const params = new URLSearchParams(location.search);
   let saved = params.get('btc');
   try { saved = saved ?? localStorage.getItem('btcAmount'); } catch {}
@@ -247,6 +457,22 @@
     for (const k of CURS) $('t'+k).setAttribute('aria-pressed', k === c);
     render();
   });
+
+  // Ansicht: #kacheln / #balken / #wasserfall, sonst zuletzt gewählte
+  const VIEWS = ['kacheln', 'balken', 'wasserfall'];
+  const viewBtns = document.querySelectorAll('.views button');
+  function setView(v, push) {
+    state.view = VIEWS.includes(v) ? v : 'kacheln';
+    viewBtns.forEach(b => b.setAttribute('aria-current', b.dataset.v === state.view));
+    try { localStorage.setItem('btcView', state.view); } catch {}
+    if (push) history.replaceState(null, '', location.pathname + location.search + '#' + state.view);
+    render();
+  }
+  viewBtns.forEach(b => b.addEventListener('click', () => setView(b.dataset.v, true)));
+  window.addEventListener('hashchange', () => setView(location.hash.slice(1)));
+  let startView = location.hash.slice(1);
+  if (!startView) try { startView = localStorage.getItem('btcView'); } catch {}
+  setView(startView);
 
   refresh(true);
   setInterval(() => refresh(false), 30000);
